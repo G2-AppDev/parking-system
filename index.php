@@ -10,7 +10,7 @@ $isSignedIn = !empty($_SESSION['is_signed_in']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="style.css">
     <title>Siksik Parking System</title>
-    <script src="script.js" defer></script>
+    <script src="script.js?v=20260710-auth" defer></script>
 </head>
 <body>
     <section class="main-page-section">
@@ -34,6 +34,9 @@ $isSignedIn = !empty($_SESSION['is_signed_in']);
                         Dashboard
                     </a>
                     <?php if ($isSignedIn): ?>
+                        <a class="SignIn-btn" href="profile.php" style="background: transparent; border: 1px solid rgba(255,255,255,0.16); color: #8d8b8b;">
+                            Profile
+                        </a>
                         <a class="SignIn-btn" href="book.php">
                             Book Now
                             <img src="images/arrow-right.svg" class="side-icon" alt="">
