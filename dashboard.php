@@ -9,7 +9,6 @@ if (empty($_SESSION['is_signed_in']) || empty($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
-// AJAX Vehicle Management Handler
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     header('Content-Type: application/json');
     $action = $_POST['action'];
@@ -41,7 +40,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $success = $stmt->execute([$user_id, $plate, $category]);
         $vehicle_id = $pdo->lastInsertId();
 
-        // Self-manage multiple vehicles flag
         $stmt = $pdo->prepare("UPDATE users SET has_multiple_vehicles = 1 WHERE id = ?");
         $stmt->execute([$user_id]);
 
@@ -68,7 +66,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $stmt = $pdo->prepare("DELETE FROM user_vehicles WHERE id = ? AND user_id = ?");
         $success = $stmt->execute([$id, $user_id]);
 
-        // Self-manage multiple vehicles flag
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM user_vehicles WHERE user_id = ?");
         $stmt->execute([$user_id]);
         $count = intval($stmt->fetchColumn());
@@ -86,7 +83,6 @@ $current_time = date('H:i:s');
 $current_date = date('Y-m-d');
 
 try {
-    // 1. Fetch user information
     $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
     $stmt->execute([$user_id]);
     $user = $stmt->fetch();
@@ -97,7 +93,6 @@ try {
         exit;
     }
 
-    // 2. Fetch all bookings for categorization
     $stmt = $pdo->prepare("SELECT * FROM bookings WHERE user_id = ? ORDER BY booking_date DESC, arrival_time DESC");
     $stmt->execute([$user_id]);
     $all_bookings = $stmt->fetchAll();
@@ -115,7 +110,6 @@ try {
             $booking_date = $booking['booking_date'];
             $arrival_time = $booking['arrival_time'];
             
-            // Grace period: 30 minutes (1800 seconds) after arrival
             $grace_end_ts = strtotime($arrival_time) + 1800;
             $grace_end_time = date('H:i:s', $grace_end_ts);
 
@@ -129,13 +123,12 @@ try {
             }
 
             if ($past_grace_period) {
-                // Classify past bookings: even IDs as Completed, odd IDs as Void
                 if (intval($booking['id']) % 2 === 0) {
                     $completed_bookings[] = $booking;
                     $total_spent += floatval($booking['total_amount']);
                 } else {
                     $void_bookings[] = $booking;
-                    $total_spent += (floatval($booking['total_amount']) * 0.5); // 50% refund returned
+                    $total_spent += (floatval($booking['total_amount']) * 0.5);
                 }
             } else {
                 $active_bookings[] = $booking;

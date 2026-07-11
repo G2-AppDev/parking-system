@@ -14,7 +14,6 @@ if (empty($_SESSION['is_signed_in'])) {
 
 date_default_timezone_set('Asia/Manila');
 
-// 1. Handle API Action to Get Occupied Spots
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['action'] ?? '') === 'get_occupied_spots') {
     header('Content-Type: application/json');
     $location_id = $_GET['location_id'] ?? '';
@@ -51,7 +50,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['action'] ?? '') === 'get_occ
     exit;
 }
 
-// 2. Handle API Action to Confirm Booking
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'confirm_booking') {
     header('Content-Type: application/json');
     
@@ -108,7 +106,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'confi
         }
     }
 
-    // Backend price verification
     if ($is_overnight) {
         $parts = explode(':', $arrival_time);
         $hours = intval($parts[0] ?? 0);
@@ -119,8 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'confi
         $arrival_ts = strtotime($current_date . ' ' . $arrival_time);
         $departure_ts = $arrival_ts + ($duration * 3600);
 
-        // 7:00 AM next morning
-        $next_7am_ts = strtotime($current_date . ' 07:00:00') + 86400; // +1 day
+        $next_7am_ts = strtotime($current_date . ' 07:00:00') + 86400;
 
         $extra_cost = 0;
         if ($departure_ts > $next_7am_ts) {
@@ -143,7 +139,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'confi
     $query_end = date('H:i:s', $query_end_ts);
 
     try {
-        // Double booking prevention check
         $stmt = $pdo->prepare("
             SELECT id 
             FROM bookings 
@@ -160,8 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'confi
             exit;
         }
 
-        // Generate receipt
-        try {
+                try {
             $randomCode = strtoupper(bin2hex(random_bytes(3)));
         } catch (Exception $exception) {
             $randomCode = strtoupper(substr(uniqid('', true), -6));
@@ -169,8 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'confi
         $receipt_number = 'SK-' . date('Ymd') . '-' . $randomCode;
         $issued_at = date('M d, Y h:i A');
 
-        // Insert booking
-        $stmt = $pdo->prepare("
+                $stmt = $pdo->prepare("
             INSERT INTO bookings (user_id, booking_date, receipt_number, location_id, location_name, floor, spot_label, spot_type, arrival_time, duration_hours, hourly_rate, payment_method, payment_status, total_amount, is_overnight, plate_number, vehicle_category) 
             VALUES (?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
@@ -206,7 +199,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'confi
     exit;
 }
 
-// 3. Handle AJAX Action to Cancel Booking
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'cancel_booking') {
     header('Content-Type: application/json');
     $user_id = $_SESSION['user_id'] ?? null;
@@ -232,7 +224,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'cance
     exit;
 }
 
-// 4. Fetch user details & vehicles
 $user_id = $_SESSION['user_id'];
 $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
 $stmt->execute([$user_id]);
@@ -511,8 +502,7 @@ if ($user) {
                 </aside>
             </div>
 
-            <!-- Booking History Section -->
-            <div class="booking-history-wrapper" style="margin-top: 48px;">
+                <div class="booking-history-wrapper" style="margin-top: 48px;">
                 <div class="booking-panel-header" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <span class="booking-panel-label">DASHBOARD</span>
@@ -524,12 +514,10 @@ if ($user) {
                     </div>
                 </div>
                 <div class="booking-history-container" id="booking-history-list">
-                    <!-- History cards will be loaded here via AJAX -->
                 </div>
             </div>
         </main>
 
-        <!-- Checkout / Payment Modal -->
         <div class="checkout-modal-backdrop" id="checkout-modal" style="display: none;">
             <div class="checkout-modal-card">
                 <div class="checkout-modal-header">
@@ -577,9 +565,7 @@ if ($user) {
                         </div>
                     </div>
 
-                    <!-- Payment details panels -->
                     <div style="border-left: 1px solid rgba(255, 255, 255, 0.08); padding-left: 20px; display: flex; flex-direction: column; justify-content: center; min-height: 200px;">
-                        <!-- GCash/Maya Screen -->
                         <div class="payment-screen" id="screen-qr">
                             <p style="font-size: 12px; color: #8d8b8b; margin: 0 0 12px 0; text-align: center;">Scan QR to pay securely via GCash or Maya app.</p>
                             <div style="display: flex; justify-content: center; background: white; padding: 12px; border-radius: 8px; width: fit-content; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
@@ -588,14 +574,12 @@ if ($user) {
                             <p style="font-size: 10px; color: #555; text-align: center; margin: 8px 0 0 0; text-transform: uppercase; font-family: monospace;">Scanable mockup payment code</p>
                         </div>
 
-                        <!-- PayPal Screen -->
                         <div class="payment-screen" id="screen-paypal" style="display: none; flex-direction: column; gap: 10px;">
                             <p style="font-size: 12px; color: #8d8b8b; margin: 0 0 6px 0;">Log in with your PayPal account credentials.</p>
                             <input class="email-input-bar" type="email" placeholder="PayPal Email Address" style="padding: 12px 10px;">
                             <input class="email-input-bar" type="password" placeholder="Password" style="padding: 12px 10px;">
                         </div>
 
-                        <!-- Card Screen -->
                         <div class="payment-screen" id="screen-card" style="display: none; flex-direction: column; gap: 10px;">
                             <p style="font-size: 12px; color: #8d8b8b; margin: 0 0 6px 0;">Enter your credit/debit card credentials.</p>
                             <input class="email-input-bar" type="text" placeholder="Cardholder Name" style="padding: 12px 10px;">
@@ -606,7 +590,6 @@ if ($user) {
                             </div>
                         </div>
 
-                        <!-- Cash Screen -->
                         <div class="payment-screen" id="screen-cash" style="display: none; flex-direction: column; gap: 10px;">
                             <h3 style="color: #00d4a8; font-size: 14px; margin: 0; font-family: monospace; text-transform: uppercase;">Pay Cash on Arrival</h3>
                             <p style="font-size: 12px; color: #e2e6ed; margin: 0; line-height: 1.5;">Your spot will be reserved now. Pay the total amount at the parking cashier or attendant when you arrive.</p>
@@ -615,7 +598,6 @@ if ($user) {
                             </div>
                         </div>
 
-                        <!-- Processing Screen -->
                         <div class="payment-screen" id="screen-processing" style="display: none; text-align: center;">
                             <div style="width: 40px; height: 40px; border: 3px solid rgba(0,212,168,0.1); border-top-color: #00d4a8; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div>
                             <p id="payment-processing-text" style="color: #00d4a8; margin: 15px 0 0 0; font-weight: bold; font-family: monospace; font-size: 13px;">Processing Transaction...</p>
@@ -630,7 +612,6 @@ if ($user) {
             </div>
         </div>
 
-        <!-- Payment Success / Grace Period Alert Modal -->
         <div class="checkout-modal-backdrop" id="success-alert-modal" style="display: none; z-index: 1100;">
             <div class="checkout-modal-card" style="width: min(480px, 100%); text-align: center; gap: 16px;">
                 <div style="background: rgba(0, 212, 168, 0.1); border: 2px solid #00d4a8; border-radius: 50%; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
